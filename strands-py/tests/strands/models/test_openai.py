@@ -1292,7 +1292,9 @@ async def test_stream_groups_tool_fragments_when_the_opening_fragment_has_no_ide
 
 
 @pytest.mark.asyncio
-async def test_stream_closes_tool_block_when_the_stream_ends_without_finish_reason(openai_client, model, messages):
+async def test_stream_closes_tool_block_when_the_stream_ends_without_finish_reason(
+    openai_client, model, messages, alist
+):
     """Guards against an inline tool block being left open when no finish_reason arrives (#3946)."""
     events = [
         _tool_call_event([_tool_call_fragment(0, '{"expression"', tool_use_id="c1", tool_name="calculator")]),
@@ -1305,7 +1307,7 @@ async def test_stream_closes_tool_block_when_the_stream_ends_without_finish_reas
 
     openai_client.chat.completions.create = unittest.mock.AsyncMock(return_value=source())
 
-    streamed_events = [chunk async for chunk in model.stream(messages)]
+    streamed_events = await alist(model.stream(messages))
 
     tru_block_counts = (
         len([chunk for chunk in streamed_events if "contentBlockStart" in chunk]),
